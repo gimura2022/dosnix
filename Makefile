@@ -37,7 +37,7 @@ full: bootloader kernel
 
 install-kernel:
 	mkdir -p $(FLOPPYMNT)
-	mount $(FLOPPY).img
+	mount $(FLOPPY).img $(FLOPPYMNT)
 	cp $(OBJDIR)/kernel.sys $(FLOPPYMNT)/KERNEL.SYS
 	umount $(FLOPPY).img
 

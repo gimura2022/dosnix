@@ -1,4 +1,6 @@
 *.img
+*.bin
+*.sys
 *.o
 
-fdos/
+fs/

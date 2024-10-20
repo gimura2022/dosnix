@@ -1,49 +1,50 @@
-#=============================================================================#
-#                                  FDOS                                       #
-#                         Written by Victor Kindhart                          #
-#                 FDOS - Makefile - used for building the OS                  #
-#=============================================================================#
+ASMC = fasm
+CC   = gcc
+DD   = dd
+CP   = cp
 
-OBJDIR=obj
-SRCDIR=src
-FLOPPY=fdos
-FLOPPYMNT=fdos
+S = src
 
-help:
-	@echo -e "Available commands:"
-	@echo -e "\tfloppy - create .img file"
-	@echo -e "\tbootloader - compile bootloader and create .img file"
-	@echo -e "\tkernel - compile the kernel"
-	@echo -e "\tinstall-kernel - install the kernel."
-	@echo -e "\tfull - compile both bootloader and kernel"
-	@echo -e "\tqemu - run qemu"
-	@echo -e "\tclean - clean up"
-	@echo -e "\thelp - print this help message"
+IMG    = dosnix.img
+FS_MNT = fs
 
-objdir:
-	mkdir -p obj
+KERNEL_SRC = $(S)/kernel/kernel.asm
+KERNEL_OBJ = $(KERNEL_SRC:.asm=.o)
 
-floppy: objdir
-	dd bs=512 count=2880 if=/dev/zero of=$(FLOPPY).img
+LOADER_SRC = $(S)/bootloader/bootloader.asm
+LOADER_OBJ = $(LOADER_SRC:.asm=.o)
 
-bootloader: floppy
-	fasm $(SRCDIR)/bootloader/bootloader.asm $(OBJDIR)/bootloader.o
-	dd conv=notrunc if=$(OBJDIR)/bootloader.o of=$(FLOPPY).img
+.PHONY: all
+all: install
 
-kernel: $(FLOPPY).img
-	fasm $(SRCDIR)/kernel/kernel.asm $(OBJDIR)/kernel.sys
+.PHONY: install
+install: $(IMG) kernel.sys loader.bin
+	$(DD) conv=notrunc if=loader.bin of=$(IMG)
 
-full: bootloader kernel
+	mkdir -p $(FS_MNT)
+	mount $(IMG) $(FS_MNT)
+	$(CP) kernel.sys $(FS_MNT)/kernel.sys
+	umount $(FS_MNT)
 
-install-kernel:
-	mkdir -p $(FLOPPYMNT)
-	mount $(FLOPPY).img $(FLOPPYMNT)
-	cp $(OBJDIR)/kernel.sys $(FLOPPYMNT)/KERNEL.SYS
-	umount $(FLOPPY).img
+kernel.sys: kernel.o
+	$(CP) kernel.o kernel.sys
 
-qemu:
-	qemu-system-i386 -fda $(FLOPPY).img
+kernel.o: $(KERNEL_OBJ)
+	$(CP) $(KERNEL_OBJ) kernel.o
 
-clean: objdir
-	rm -f $(OBJDIR)/*
-	rm -f $(FLOPPY).img
+loader.bin: loader.o
+	$(CP) loader.o loader.bin
+
+loader.o: $(LOADER_OBJ)
+	$(CP) $(LOADER_OBJ) loader.o
+
+$(IMG):
+	$(DD) bs=512 count=2880 if=/dev/zero of=$(IMG)
+
+%.o: %.asm
+	$(ASMC) $< $@
+
+.PHONY: clean
+clean:
+	rm -f kernel.sys kernel.o loader.bin loader.o $(IMG) $(KERNEL_OBJ) $(LOADER_OBJ)
+	rm -r $(FS_MNT)

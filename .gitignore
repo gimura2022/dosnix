@@ -3,4 +3,7 @@
 *.sys
 *.o
 
+.*
+
 fs/
+compile_commands.json

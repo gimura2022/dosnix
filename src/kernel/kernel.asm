@@ -6,7 +6,7 @@
 org 0                                                                         ; far jump from the bootloader already set cs
 use16                                                                         ; tell FASM to generate 16-bit code
                                                                               ;
-include "../libk/definitions.inc"                                             ;
+include "../../include/common.inc"
                                                                               ;
 ;=========================[ main kernel subroutine ]==========================;
 kernel_main:                                                                  ;
